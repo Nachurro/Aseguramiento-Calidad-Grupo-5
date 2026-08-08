@@ -6,6 +6,7 @@ import Header from './components/Header'
 import FloorSelector from './components/FloorSelector'
 import ParkingGrid from './components/ParkingGrid'
 import EntryModal from './components/EntryModal'
+import DetailModal from './components/DetailModal'
 import SpotTile from './components/SpotTile'
  
 const FLOORS = [1, 2, 3]
@@ -54,6 +55,13 @@ export default function App() {
       {activeSpot && !activeSpot.activeVisit && (
         <EntryModal spot={activeSpot} onClose={closeModal} onSaved={handleSaved} />
       )}
+
+      {activeSpot && activeSpot.activeVisit && (
+        <DetailModal spot={activeSpot} onClose={closeModal} onSaved={handleSaved} />
+      )}
+
+
+
     </div>
   )
 }
