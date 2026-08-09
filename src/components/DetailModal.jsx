@@ -14,7 +14,21 @@ export default function DetailModal({ spot, onClose, onSaved }) {
     minute: '2-digit'
   })
 
+  async function handleExit() {
+    setSubmitting(true)
+    setError('')
+    const { error: updateError } = await supabase
+      .from('visits')
+      .update({ exit_time: new Date().toISOString() })
+      .eq('id', visit.id)
+    setSubmitting(false)
 
+    if (updateError) {
+      setError('No se pudo registrar la salida. Intenta de nuevo.')
+      return
+    }
+    onSaved()
+  }
 
   return (
     <div className="fixed inset-0 z-30 flex items-center justify-center bg-slate-950/75 px-4 py-6 backdrop-blur-sm" onClick={onClose}>
@@ -41,7 +55,7 @@ export default function DetailModal({ spot, onClose, onSaved }) {
 
         <div className="mt-5 flex justify-end gap-2">
           <button type="button" className="rounded-xl px-3 py-2 text-sm text-slate-400 transition hover:text-slate-100" onClick={onClose}>Cerrar</button>
-          <button type="button" className="rounded-xl bg-rose-500 px-3 py-2 text-sm font-semibold text-slate-950 transition hover:bg-rose-400 disabled:opacity-60" onClick={() => {}} disabled={submitting}>
+          <button type="button" className="rounded-xl bg-rose-500 px-3 py-2 text-sm font-semibold text-slate-950 transition hover:bg-rose-400 disabled:opacity-60" onClick={handleExit} disabled={submitting}>
             {submitting ? 'Registrando…' : 'Registrar salida'}
           </button>
         </div>
