@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../supabaseClient'
+import { formatearHora } from '../utils/format'
+import { filtrarPorPlaca } from '../utils/history'
 
 export default function HistoryPanel({ onClose }) {
   const [rows, setRows] = useState([])
@@ -33,28 +35,22 @@ export default function HistoryPanel({ onClose }) {
     }
 
     const { data, error } = await query
-    if (!error) setRows(data || [])
+    if (!error) {
+      let rowsData = data || []
+      if (plateFilter.trim()) rowsData = filtrarPorPlaca(rowsData, plateFilter)
+      setRows(rowsData)
+    }
     setLoading(false)
   }
 
   useEffect(() => {
     fetchHistory()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   function handleFilterSubmit(e) {
     e.preventDefault()
     fetchHistory()
-  }
-
-  function formatDate(value) {
-    if (!value) return '—'
-    return new Date(value).toLocaleString('es-CR', {
-      day: '2-digit',
-      month: '2-digit',
-      year: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit'
-    })
   }
 
   return (
@@ -68,7 +64,7 @@ export default function HistoryPanel({ onClose }) {
           <button type="button" className="rounded-xl px-3 py-2 text-sm text-slate-400 transition hover:text-slate-100" onClick={onClose}>Cerrar</button>
         </div>
 
-        <form className="mb-4 grid gap-2 md:grid-cols-[1.2fr_1fr_1fr_1fr_auto]" onSubmit={() => {}}>
+        <form className="mb-4 grid gap-2 md:grid-cols-[1.2fr_1fr_1fr_1fr_auto]" onSubmit={handleFilterSubmit}>
           <input
             placeholder="Placa"
             value={plateFilter}
@@ -117,8 +113,8 @@ export default function HistoryPanel({ onClose }) {
                     <td className="px-3 py-2 font-mono text-slate-100">{row.plate}</td>
                     <td className="px-3 py-2">{row.visitor_name}</td>
                     <td className="px-3 py-2">{row.apartment}</td>
-                    <td className="px-3 py-2 font-mono text-slate-100">{formatDate(row.entry_time)}</td>
-                    <td className="px-3 py-2 font-mono text-slate-100">{row.exit_time ? formatDate(row.exit_time) : '— activo —'}</td>
+                    <td className="px-3 py-2 font-mono text-slate-100">{formatearHora(row.entry_time)}</td>
+                    <td className="px-3 py-2 font-mono text-slate-100">{row.exit_time ? formatearHora(row.exit_time) : '— activo —'}</td>
                   </tr>
                 ))}
               </tbody>

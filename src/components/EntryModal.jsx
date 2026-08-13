@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { supabase } from '../supabaseClient'
+import { normalizarPlaca, validarApartamento } from '../utils/validation'
 
 export default function EntryModal({ spot, onClose, onSaved }) {
   const [visitorName, setVisitorName] = useState('')
@@ -12,28 +13,33 @@ export default function EntryModal({ spot, onClose, onSaved }) {
     e.preventDefault()
     setError('')
 
-    const apartmentNumber = Number(apartment)
-    if (!visitorName.trim() || !plate.trim() || !apartmentNumber) {
-      setError('Completa nombre, placa y apartamento.')
+    if (!visitorName || !visitorName.trim()) {
+      setError('Falta el nombre del visitante.')
       return
     }
-    if (apartmentNumber < 1 || apartmentNumber > 30) {
-      setError('El apartamento debe estar entre 1 y 30.')
+    if (!plate || !plate.trim()) {
+      setError('Falta la placa del vehículo.')
       return
     }
+    const apartmentCheck = validarApartamento(apartment)
+    if (!apartmentCheck.valid) {
+      setError(apartmentCheck.error)
+      return
+    }
+    const apartmentValue = apartmentCheck.value
 
     setSubmitting(true)
     const { error: insertError } = await supabase.from('visits').insert({
       spot_id: spot.id,
-      apartment: apartmentNumber,
-      plate: plate.trim().toUpperCase(),
+      apartment: apartmentValue,
+      plate: normalizarPlaca(plate),
       visitor_name: visitorName.trim()
     })
     setSubmitting(false)
 
     if (insertError) {
       if (insertError.code === '23505' && insertError.message.includes('apartment')) {
-        setError(`El apartamento ${apartmentNumber} ya tiene un espacio de visita ocupado.`)
+        setError(`El apartamento ${apartment} ya tiene un espacio de visita ocupado.`)
       } else if (insertError.code === '23505') {
         setError('Este espacio ya fue ocupado. Actualizando…')
       } else {

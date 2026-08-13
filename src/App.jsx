@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import { useAuth } from './hooks/useAuth'
 import { useSpots } from './hooks/useSpots'
+import { contarDisponibles } from './utils/spots'
 import Login from './components/Login'
 import Header from './components/Header'
 import FloorSelector from './components/FloorSelector'
@@ -17,11 +18,10 @@ export default function App() {
   const [activeSpot, setActiveSpot] = useState(null)
   const [historyOpen, setHistoryOpen] = useState(false)
 
-  const { spots, loading, refetch } = useSpots(floor, session)
+  const { spots, loading, error, refetch } = useSpots(floor, session)
 
   const counts = useMemo(() => {
-    const available = spots.filter((s) => !s.activeVisit).length
-    return { [floor]: { available } }
+    return { [floor]: { available: contarDisponibles(spots) } }
   }, [spots, floor])
 
   if (authLoading) {
@@ -50,7 +50,7 @@ export default function App() {
       <Header onOpenHistory={() => setHistoryOpen(true)} onSignOut={signOut} />
 
       <main className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 py-5 sm:px-6 lg:grid lg:grid-cols-[1fr_130px] lg:px-8 lg:py-8">
-        <ParkingGrid spots={spots} loading={loading} onTileClick={handleTileClick} />
+        <ParkingGrid spots={spots} loading={loading} error={error} onTileClick={handleTileClick} />
         <FloorSelector floors={FLOORS} selected={floor} onSelect={setFloor} counts={counts} />
       </main>
 
