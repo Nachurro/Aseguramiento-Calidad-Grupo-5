@@ -1,18 +1,13 @@
 import { useState } from 'react'
 import { supabase } from '../supabaseClient'
+import { formatearHora } from '../utils/format'
 
 export default function DetailModal({ spot, onClose, onSaved }) {
   const visit = spot.activeVisit
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
 
-  const entryTime = new Date(visit.entry_time).toLocaleString('es-CR', {
-    day: '2-digit',
-    month: '2-digit',
-    year: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit'
-  })
+  const entryTime = formatearHora(visit.entry_time)
 
   async function handleExit() {
     setSubmitting(true)

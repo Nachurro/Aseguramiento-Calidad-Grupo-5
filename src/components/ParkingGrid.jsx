@@ -1,8 +1,11 @@
 import SpotTile from './SpotTile'
 
-export default function ParkingGrid({ spots, loading, onTileClick }) {
+export default function ParkingGrid({ spots, loading, error, onTileClick }) {
   if (loading) {
     return <div className="col-span-full rounded-2xl border border-dashed border-slate-800 bg-slate-900/70 p-8 text-center text-sm text-slate-400">Cargando espacios…</div>
+  }
+  if (error) {
+    return <div className="col-span-full rounded-2xl border border-dashed border-slate-800 bg-rose-900/70 p-8 text-center text-sm text-rose-300">Error cargando espacios: {error.message || String(error)}</div>
   }
 
   if (spots.length === 0) {
