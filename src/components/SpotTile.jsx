@@ -1,5 +1,7 @@
+import { obtenerEstado } from '../utils/spots'
+
 export default function SpotTile({ spot, onClick }) {
-  const occupied = Boolean(spot.activeVisit)
+  const occupied = obtenerEstado(spot) === 'ocupado'
 
   return (
     <button
