@@ -1,11 +1,5 @@
 // Formato de fecha/hora extraído de DetailModal y HistoryPanel (HU-07).
-//
-// NOTA (defecto encontrado en pruebas unitarias, ver DEF-001 en el informe):
-// Intl.DateTimeFormat con { month: '2-digit' } no garantiza el padding del
-// mes de forma consistente entre motores/versiones (confirmado en Node 22 /
-// ICU 78: "julio" se mostraba como "7" en vez de "07"). Se construye el
-// formato manualmente en 24 horas para que sea 100% predecible y comprobable,
-// sin depender del comportamiento de Intl del entorno donde corra la app.
+
 function pad(n) {
   return String(n).padStart(2, '0')
 }
