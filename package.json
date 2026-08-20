@@ -10,6 +10,8 @@
     "preview": "vite preview",
     "test": "vitest run tests/unit tests/components",
     "test:watch": "vitest tests/unit tests/components",
+    "test:components": "vitest run tests/components",
+    "test:components:watch": "vitest tests/components",
     "test:integration": "vitest run tests/integration",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui"
