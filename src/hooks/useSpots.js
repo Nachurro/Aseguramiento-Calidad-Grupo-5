@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { supabase } from '../supabaseClient'
 
 // HU-02, HU-03: trae los espacios del piso seleccionado junto con la
@@ -9,94 +9,51 @@ export function useSpots(floor, session) {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
 
-  useEffect(() => {
-    // No hacer nada si no hay sesión
+  const fetchSpots = useCallback(async () => {
     if (!session) {
       setSpots([])
+      setError(null)
       setLoading(false)
       return
     }
-
-    let isMounted = true
-    let subscription
-
-    async function fetchSpots() {
-      try {
-        setLoading(true)
-        const { data, error: fetchError } = await supabase
-          .from('spots')
-          .select('id, floor, spot_number, code, visits(id, plate, visitor_name, apartment, entry_time, exit_time)')
-          .eq('floor', floor)
-          .order('spot_number', { ascending: true })
-
-        if (fetchError) throw fetchError
-
-        if (isMounted) {
-          const normalized = (data || []).map((spot) => {
-            const activeVisit = spot.visits?.find((v) => v.exit_time === null) || null
-            return { ...spot, activeVisit }
-          })
-          setSpots(normalized)
-          setError(null)
-        }
-      } catch (err) {
-        if (isMounted) {
-          setError(err)
-        }
-      } finally {
-        if (isMounted) {
-          setLoading(false)
-        }
-      }
-    }
-
-    // Ejecutar fetch inicial
-    fetchSpots()
-
-    // Suscribirse a cambios en tiempo real
-    subscription = supabase
-      .channel(`visits-realtime-${floor}`)
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'visits' },
-        () => {
-          if (isMounted) {
-            fetchSpots()
-          }
-        }
-      )
-      .subscribe()
-
-    // Cleanup
-    return () => {
-      isMounted = false
-      supabase.removeChannel(subscription)
-    }
-  }, [floor, session])
-
-  const refetch = async () => {
     setLoading(true)
-    try {
-      const { data, error: fetchError } = await supabase
-        .from('spots')
-        .select('id, floor, spot_number, code, visits(id, plate, visitor_name, apartment, entry_time, exit_time)')
-        .eq('floor', floor)
-        .order('spot_number', { ascending: true })
+    const { data, error } = await supabase
+      .from('spots')
+      .select('id, floor, spot_number, code, visits!left(id, plate, visitor_name, apartment, entry_time)')
+      .eq('floor', floor)
+      .is('visits.exit_time', null)
+      .order('spot_number', { ascending: true })
 
-      if (fetchError) throw fetchError
-
-      const normalized = (data || []).map((spot) => {
-        const activeVisit = spot.visits?.find((v) => v.exit_time === null) || null
-        return { ...spot, activeVisit }
-      })
+    console.debug('[useSpots] fetchSpots result', { floor, count: (data || []).length, error })
+    if (error) {
+      console.error('[useSpots] fetchSpots error', error)
+      setError(error)
+      setSpots([])
+    } else {
+      const normalized = (data || []).map((spot) => ({
+        ...spot,
+        activeVisit: spot.visits && spot.visits.length > 0 ? spot.visits[0] : null
+      }))
       setSpots(normalized)
       setError(null)
-    } catch (err) {
-      setError(err)
-    } finally {
-      setLoading(false)
     }
-  }
+    setLoading(false)
+  }, [floor, session])
 
-  return { spots, loading, error, refetch }
+  useEffect(() => {
+    fetchSpots()
+
+    const channel = supabase
+      .channel('visits-realtime')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'visits' }, () => {
+        fetchSpots()
+      })
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(channel)
+    }
+  }, [fetchSpots])
+
+  return { spots, loading, error, refetch: fetchSpots }
 }
